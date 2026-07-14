@@ -1,0 +1,751 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_POSTGRES",
+      "label": "Postgres",
+      "description": "Supabase Postgres connection holding sensor_readings",
+      "type": "datasource",
+      "pluginId": "postgres"
+    }
+  ],
+  "title": "Smart Manufacturing IoT Monitoring (Public)",
+  "uid": "smart-mfg-iot-public",
+  "tags": [
+    "iot",
+    "manufacturing",
+    "postgres"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 100,
+      "type": "row",
+      "title": "Fleet Overview",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Machines Online",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COUNT(DISTINCT machine_id) AS value FROM sensor_readings WHERE $__timeFilter(ts);",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "% Machines in Failure",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT 100.0 * COUNT(*) FILTER (WHERE machine_status = 'Failure') / NULLIF(COUNT(*), 0) AS value FROM (SELECT DISTINCT ON (machine_id) machine_id, machine_status FROM sensor_readings WHERE $__timeFilter(ts) ORDER BY machine_id, ts DESC) latest;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 15
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Active Anomalies",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT SUM(anomaly_flag) AS value FROM sensor_readings WHERE $__timeFilter(ts);",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 20
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Machines Needing Maintenance",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) AS value FROM (SELECT DISTINCT ON (machine_id) machine_id, maintenance_required FROM sensor_readings WHERE $__timeFilter(ts) ORDER BY machine_id, ts DESC) latest WHERE maintenance_required = 1;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 101,
+      "type": "row",
+      "title": "Sensor Time Series",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Temperature by Machine",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroup(ts, $__interval) AS time, machine_id AS metric, AVG(temperature) AS value FROM sensor_readings WHERE $__timeFilter(ts) GROUP BY 1, 2 ORDER BY 1;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Vibration by Machine",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroup(ts, $__interval) AS time, machine_id AS metric, AVG(vibration) AS value FROM sensor_readings WHERE $__timeFilter(ts) GROUP BY 1, 2 ORDER BY 1;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Pressure & Humidity (fleet average)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroup(ts, $__interval) AS time, 'pressure' AS metric, AVG(pressure) AS value FROM sensor_readings WHERE $__timeFilter(ts) GROUP BY 1 ORDER BY 1;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        },
+        {
+          "refId": "B",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroup(ts, $__interval) AS time, 'humidity' AS metric, AVG(humidity) AS value FROM sensor_readings WHERE $__timeFilter(ts) GROUP BY 1 ORDER BY 1;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Energy Consumption by Machine",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "custom": {
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroup(ts, $__interval) AS time, machine_id AS metric, AVG(energy_consumption) AS value FROM sensor_readings WHERE $__timeFilter(ts) GROUP BY 1, 2 ORDER BY 1;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 102,
+      "type": "row",
+      "title": "Health & Prediction",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 9,
+      "type": "bargauge",
+      "title": "Predicted Remaining Life (hours, lowest first)",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 23
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "green",
+                "value": 500
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^predicted_remaining_life$/",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT machine_id, predicted_remaining_life FROM (SELECT DISTINCT ON (machine_id) machine_id, predicted_remaining_life, ts FROM sensor_readings WHERE $__timeFilter(ts) ORDER BY machine_id, ts DESC) latest ORDER BY predicted_remaining_life ASC;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Downtime Risk Score (latest per machine)",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 23
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 0.8
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "downtime_risk"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT machine_id, downtime_risk FROM (SELECT DISTINCT ON (machine_id) machine_id, downtime_risk, ts FROM sensor_readings WHERE $__timeFilter(ts) ORDER BY machine_id, ts DESC) latest ORDER BY downtime_risk DESC;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "state-timeline",
+      "title": "Machine Status Timeline",
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 0,
+        "y": 32
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT ts AS time, machine_id AS metric, machine_status AS value FROM sensor_readings WHERE $__timeFilter(ts) ORDER BY ts;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 103,
+      "type": "row",
+      "title": "Failure Analytics",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 12,
+      "type": "piechart",
+      "title": "Failure Type Breakdown",
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 41
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT failure_type, COUNT(*) AS count FROM sensor_readings WHERE $__timeFilter(ts) AND failure_type <> 'Normal' GROUP BY failure_type ORDER BY count DESC;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "barchart",
+      "title": "Anomaly Count Over Time",
+      "gridPos": {
+        "h": 9,
+        "w": 16,
+        "x": 8,
+        "y": 41
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroup(ts, $__interval) AS time, 'anomalies' AS metric, SUM(anomaly_flag) AS value FROM sensor_readings WHERE $__timeFilter(ts) GROUP BY 1 ORDER BY 1;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "table",
+      "title": "Maintenance Required (latest per machine)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 32
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "downtime_risk"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT machine_id, ts, downtime_risk, predicted_remaining_life, failure_type FROM (SELECT DISTINCT ON (machine_id) machine_id, ts, downtime_risk, predicted_remaining_life, failure_type, maintenance_required FROM sensor_readings WHERE $__timeFilter(ts) ORDER BY machine_id, ts DESC) latest WHERE maintenance_required = 1 ORDER BY downtime_risk DESC;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "type": "barchart",
+      "title": "Failure Type Over Time",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 50
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRES}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroup(ts, $__interval) AS time, failure_type AS metric, COUNT(*) AS value FROM sensor_readings WHERE $__timeFilter(ts) AND failure_type <> 'Normal' GROUP BY 1, 2 ORDER BY 1;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRES}"
+          }
+        }
+      ]
+    }
+  ]
+}
